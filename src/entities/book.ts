@@ -1,4 +1,4 @@
-﻿import { isNotEmpty } from "@elyukai/utils/array/nonEmpty"
+import { isNotEmpty } from "@elyukai/utils/array/nonEmpty"
 import { isNotNullish, mapNullable } from "@elyukai/utils/nullable"
 import { romanize } from "@elyukai/utils/roman"
 import { assertExhaustive } from "@elyukai/utils/typeSafety"
@@ -294,10 +294,10 @@ export const getBookRawEntityDescription: EntityDescriptionCreator<
       label: translate("Content Quality"),
       value: cq,
     })),
-    {
+    mapNullable(rules, r => ({
       label: translate("Rules"),
-      value: renderBookRules(translate, translateMap, rules),
-    },
+      value: renderBookRules(translate, translateMap, r),
+    })),
     mapNullable(entry.content.cost, cost =>
       renderCost(translate, translateMap, locale.formatNumber, cost),
     ),
