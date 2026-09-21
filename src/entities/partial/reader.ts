@@ -171,7 +171,7 @@ export const attributedNameR = <
 export const attributedNameFromInstanceR = (
   instance: { translations: LocaleMap<{ name: string }> } | undefined,
   context: string,
-  ...args: IdArgsVariant
+  ...args: IdArgsVariant<EntityMap, keyof EntityMap>
 ): Reader<{ translateMap: TranslateMap }, string | undefined> =>
   Reader.asks(env => attributedNameFromInstance(env.translateMap, instance, context, ...args))
 

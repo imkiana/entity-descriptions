@@ -2,7 +2,6 @@ import { ensureNonEmpty, isNotEmpty } from "@elyukai/utils/array/nonEmpty"
 import { on } from "@elyukai/utils/function"
 import { isNotNullish } from "@elyukai/utils/nullable"
 import { compareNumber } from "@elyukai/utils/ordering"
-import { romanize } from "@elyukai/utils/roman"
 import { sign } from "@elyukai/utils/string/number"
 import { assertExhaustive } from "@elyukai/utils/typeSafety"
 import type {
@@ -12,8 +11,6 @@ import type {
   AttackModifier,
   BookCost,
   BookCostVariant,
-  BookRules,
-  BookType,
   BurningTime,
   CloseCombatTechnique,
   CloseCombatTechniqueSpecialRules,
@@ -63,7 +60,6 @@ import type {
   RawDefinitionListEntityDescriptionSectionItem,
   RawEntityDescriptionSection,
   RawEntityDescriptionSectionContent,
-  RawNestedDefinitionListEntityDescriptionSection,
 } from "../index.js"
 import { renderDice, renderDiceAndFlat } from "./partial/dice.js"
 import { attributedName, attributedNameFromInstance } from "./partial/markdown.js"
@@ -72,6 +68,7 @@ import { parensIf } from "./partial/rated/activatable/parensIf.js"
 import { ResponsiveTextSize } from "./partial/responsiveText.js"
 import { formatTimeSpan } from "./partial/units/timeSpan.js"
 import { MISSING_VALUE, UNHANDLED_VALUE } from "./partial/unknown.js"
+import { getBookRawEntityDescription } from "./book.js"
 
 /**
  * Get the name of an equipment item.
@@ -379,7 +376,10 @@ const renderRangedDamage = (translate: Translate) => (damage: RangedDamage) => {
   }
 }
 
-const renderComplexity = (
+/**
+ * Render the complexity of an item.
+ */
+export const renderComplexity = (
   translate: Translate,
   complexity: ArmorComplexity | Complexity | undefined,
 ) =>
@@ -655,7 +655,10 @@ const renderWeight = (
   }
 }
 
-const renderCost = (
+/**
+ * Render the cost of an item.
+ */
+export const renderCost = (
   translate: Translate,
   translateMap: TranslateMap,
   formatNumber: FormatNumber,
@@ -896,169 +899,6 @@ const normalizeCombatValues = (
   }
 }
 
-const renderBookTypes = (
-  translate: Translate,
-  translateMap: TranslateMap,
-  localeJoin: LocaleJoin,
-  localeCompare: LocaleCompare,
-  getInstanceById: GetInstanceById<"Skill">,
-  types: BookType[],
-): string =>
-  types
-    .map((type): [main: string, sub?: string] => {
-      switch (type.kind) {
-        case "Mundane":
-          switch (type.Mundane.kind) {
-            case "RomanceNovel":
-              return [translate("Romance Novel")]
-            case "Poetry":
-              return [translate("Poetry")]
-            case "PoliticalPamphlet":
-              return [translate("Political Pamphlet")]
-            case "CrimeStory":
-              return [translate("Crime Story")]
-            case "FairyTale":
-              return [translate("Fairy Tale")]
-            case "Novel":
-              return [translate("Novel")]
-            case "ProfessionalPublication":
-              return [
-                translate("Professional Publication"),
-                translateMap(
-                  getInstanceById("Skill", type.Mundane.ProfessionalPublication)?.translations,
-                )?.name ?? MISSING_VALUE,
-              ]
-            default:
-              return assertExhaustive(type.Mundane)
-          }
-        case "Magical":
-          return [translate("Magical Book")]
-        case "Religious":
-          return [translate("Religious Works")]
-        default:
-          return assertExhaustive(type)
-      }
-    })
-    .reduce<[main: string, sub?: string[]][]>((accTypes, [main, sub]) => {
-      const last = accTypes.at(-1)
-      return last?.[1] === undefined || sub === undefined
-        ? [...accTypes, [main, sub === undefined ? undefined : [sub]]]
-        : [...accTypes.slice(0, -1), [last[0], [...last[1], sub]]]
-    }, [])
-    .map(([main, sub]) =>
-      sub === undefined
-        ? main
-        : `${main} (${localeJoin(sub.toSorted(localeCompare), "conjunction")})`,
-    )
-    .join(", ")
-
-const renderBookRules = (
-  translate: Translate,
-  rules: BookRules,
-):
-  | string
-  | (
-      | RawEntityDescriptionSectionContent<RawNestedDefinitionListEntityDescriptionSection>
-      | undefined
-    )[] => {
-  switch (rules.kind) {
-    case "Plain":
-      if (
-        rules.Plain.reconstruction === undefined &&
-        rules.Plain.references === undefined &&
-        rules.Plain.textAfter === undefined
-      ) {
-        return rules.Plain.text
-      }
-
-      return [
-        {
-          type: "plain",
-          text: rules.Plain.text,
-        },
-        {
-          type: "definitionList",
-          style: "nested",
-          items: [
-            mapNullable(rules.Plain.reconstruction, reconstruction => ({
-              label: translate("Reconstruction"),
-              value: reconstruction,
-            })),
-            mapNullable(rules.Plain.references, references => ({
-              label: translate("References"),
-              value: references,
-            })),
-          ],
-        },
-        mapNullable(rules.Plain.textAfter, textAfter => ({
-          type: "plain",
-          text: textAfter,
-        })),
-      ]
-    case "Entertainment":
-      return translate("Entertainment")
-    case "ByEdition":
-      return [
-        {
-          type: "definitionList",
-          style: "nested",
-          items: [
-            ...rules.ByEdition.editions.map(
-              (
-                edition,
-              ): {
-                label: string
-                value:
-                  | string
-                  | (
-                      | RawEntityDescriptionSectionContent<RawNestedDefinitionListEntityDescriptionSection>
-                      | undefined
-                    )[]
-              } => {
-                if (edition.reconstruction === undefined && edition.references === undefined) {
-                  return {
-                    label: edition.label,
-                    value: edition.text,
-                  }
-                }
-
-                return {
-                  label: edition.label,
-                  value: [
-                    {
-                      type: "plain",
-                      text: edition.text,
-                    },
-                    {
-                      type: "definitionList",
-                      style: "nested",
-                      items: [
-                        mapNullable(edition.reconstruction, reconstruction => ({
-                          label: translate("Reconstruction"),
-                          value: reconstruction,
-                        })),
-                        mapNullable(edition.references, references => ({
-                          label: translate("References"),
-                          value: references,
-                        })),
-                      ],
-                    },
-                  ],
-                }
-              },
-            ),
-          ],
-        },
-        mapNullable(rules.ByEdition.textAfter, textAfter => ({
-          type: "plain",
-          text: textAfter,
-        })),
-      ]
-    default:
-      return assertExhaustive(rules)
-  }
-}
-
 /**
  * Get a JSON representation of the rules text for equipment.
  */
@@ -1083,111 +923,11 @@ export const getEquipmentEntityDescription = createEntityDescriptionCreator<
     >
     idMap: IdMap
   }
->(({ getInstanceById, idMap }, locale, entry) => {
+>(({ getInstanceById, idMap }, locale, entry, options) => {
   const { translate, translateMap, format } = locale
 
   if (entry.entity === "Book") {
-    const translation = translateMap(entry.content.translations)
-
-    if (translation === undefined) {
-      return undefined
-    }
-
-    const name = getEquipmentName(translate, translateMap, getInstanceById, entry)
-
-    return {
-      title: name,
-      className: "equipment",
-      body: [
-        {
-          type: "definitionList",
-          items: [
-            {
-              label: translate("Name"),
-              value: name,
-            },
-            {
-              label: translate("Type"),
-              value: renderBookTypes(
-                translate,
-                translateMap,
-                locale.join,
-                locale.compare,
-                getInstanceById,
-                entry.content.types,
-              ),
-            },
-            translation.language !== undefined || translation.script !== undefined
-              ? {
-                  label: translate("Language/Script"),
-                  value: [translation.language, translation.script]
-                    .map(value => value ?? "—")
-                    .join(" / "),
-                }
-              : undefined,
-            entry.content.contentQuality === undefined
-              ? undefined
-              : {
-                  label: translate("Content Quality"),
-                  value: (() => {
-                    switch (entry.content.contentQuality.kind) {
-                      case "Modest":
-                        return translate("Modest")
-                      case "Average":
-                        return translate("Average")
-                      case "Demanding":
-                        return (
-                          translate("Demanding") +
-                          parensIf(
-                            translate("CL {$level}", {
-                              level: romanize(entry.content.contentQuality.Demanding),
-                            }),
-                          )
-                        )
-                      default:
-                        return assertExhaustive(entry.content.contentQuality)
-                    }
-                  })(),
-                },
-            mapNullable(entry.content.cost, cost =>
-              renderCost(translate, translateMap, locale.formatNumber, cost),
-            ),
-            translation.note === undefined
-              ? undefined
-              : {
-                  label: translate("Note"),
-                  value: translation.note,
-                },
-            translation.rules === undefined
-              ? undefined
-              : {
-                  label: translate("Rules"),
-                  value: renderBookRules(translate, translation.rules),
-                },
-            translation.legality === undefined
-              ? undefined
-              : {
-                  label: translate("Legality"),
-                  value: translation.legality,
-                },
-            translation.availability === undefined
-              ? undefined
-              : {
-                  label: translate("Availability"),
-                  value: translation.availability,
-                },
-            translation.special === undefined
-              ? undefined
-              : {
-                  label: translate("Special"),
-                  value: translation.special,
-                },
-          ],
-        },
-      ],
-      errata: translation.errata,
-      references: entry.content.src,
-    }
+    return getBookRawEntityDescription({ getInstanceById, idMap }, locale, entry, options)
   }
 
   const translation =

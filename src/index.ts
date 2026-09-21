@@ -28,6 +28,7 @@ import { getCurriculumEntityDescription } from "./entities/curriculum.js"
 import { getDerivedCharacteristicEntityDescription } from "./entities/derivedCharacteristic.js"
 import { getDiseaseEntityDescription } from "./entities/disease.js"
 import { getElixirEntityDescription } from "./entities/elixir.js"
+import { getBookEntityDescription } from "./entities/book.js"
 import { getEquipmentEntityDescription } from "./entities/equipment.js"
 import { getEquipmentPackageEntityDescription } from "./entities/equipmentPackage.js"
 import { getExperienceLevelEntityDescription } from "./entities/experienceLevel.js"
@@ -362,7 +363,7 @@ const registeredEntityDescriptionCreators = {
   AnimalCare: getEquipmentEntityDescription,
   Armor: getEquipmentEntityDescription,
   BandageOrRemedy: getEquipmentEntityDescription,
-  Book: getEquipmentEntityDescription,
+  Book: getBookEntityDescription,
   CeremonialItem: getEquipmentEntityDescription,
   Clothes: getEquipmentEntityDescription,
   ClothingPackage: getEquipmentEntityDescription,
