@@ -58,6 +58,17 @@ export type PublicationOptions = {
   onlyCompletePublications: boolean
 }
 
+/**
+ * The default publication options that include all publication groups and entries without filtering.
+ */
+export const defaultPublicationOptions: PublicationOptions = {
+  publications: [],
+  showPublicationGroups: "all",
+  changeHandling: "none",
+  onlyShowReferencesToIncludedPublications: false,
+  onlyCompletePublications: false,
+}
+
 const isPublicationIncludedInGroup = (
   publication: Pick<Publication, "category" | "containsAdultContent">,
   publicationOptions: PublicationOptions,

@@ -73,8 +73,9 @@ import type {
   GetInstanceById,
 } from "./helpers/getTypes.js"
 import type { LocaleEnvironment } from "./helpers/locale.js"
-import type { PublicationOptions } from "./references/publicationOptions.js"
+import { defaultPublicationOptions, type PublicationOptions } from "./references/publicationOptions.js"
 
+export { defaultPublicationOptions, type PublicationOptions }
 export type { LocaleEnvironment }
 
 /**
@@ -457,7 +458,7 @@ export const getEntityDescription = <E extends AvailableCreatorEntity>(
   getAllResolvedSkillUses: GetAllResolvedSkillUses,
   entityName: E,
   instanceId: string,
-  publicationOptions: PublicationOptions,
+  publicationOptions: PublicationOptions = defaultPublicationOptions,
 ): EntityDescription | undefined => {
   const creator = registeredEntityDescriptionCreators[entityName] as TypedCreator<E>
 

@@ -17,6 +17,7 @@ import type {
 } from "./index.js"
 import { getReferencesTranslation } from "./references/index.js"
 import {
+  defaultPublicationOptions,
   isEntryFromIncludedPublication,
   type PublicationOptions,
 } from "./references/publicationOptions.js"
@@ -107,8 +108,9 @@ export const createEntityDescriptionCreator =
   >(
     fn: EntityDescriptionCreator<ES, A, RawEntityDescription>,
   ): EntityDescriptionCreator<ES, A> =>
-  (databaseAccessors, locale, entry, options) => {
-    const rawEntry = fn(databaseAccessors, locale, entry, options)
+  (databaseAccessors, locale, entry, options = { publications: defaultPublicationOptions }) => {
+    const publications = options?.publications ?? defaultPublicationOptions
+    const rawEntry = fn(databaseAccessors, locale, entry, { publications })
 
     if (
       rawEntry === undefined ||
@@ -116,7 +118,7 @@ export const createEntityDescriptionCreator =
         { src: rawEntry.references },
         databaseAccessors.getInstanceById,
         locale.translateMap,
-        options.publications,
+        publications,
       )
     ) {
       return undefined
@@ -134,7 +136,7 @@ export const createEntityDescriptionCreator =
           ? undefined
           : getReferencesTranslation(
               databaseAccessors.getInstanceById,
-              options.publications,
+              publications,
               locale,
               rawEntry.references,
             ),
